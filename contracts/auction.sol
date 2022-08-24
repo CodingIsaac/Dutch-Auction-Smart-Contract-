@@ -8,7 +8,7 @@ contract smartAuction {
     uint public bidIncrements;
     string public ipfsHash;
 
-    address public auctionOwner;
+    address public  auctionOwner;
 
     enum auctionState {auctionStarted, auctionCurrentlyRunning, auctionCancelled, auctionCompleted}
     auctionState public state;
@@ -38,6 +38,21 @@ contract smartAuction {
 
     modifier currenctAuctionState() {
         require(state == auctionState.auctionCurrentlyRunning, "Auction has not Started");
+        _;
+    }
+
+    modifier stopAuction() {
+        require(state == auctionState.auctionCancelled, "Soory! No More Entry. Auction has been Cancelled");
+        _;
+    }
+
+    modifier completedAuction() {
+        require(state == auctionState.auctionCompleted, "Sorry, Auction has been Completed, Try again Next TIme");
+        _;
+    }
+
+    modifier validBids() {
+        require(bindingBids[msg.sender] > 0, "Auction Has Ended");
         _;
     }
 
@@ -92,14 +107,39 @@ contract smartAuction {
 
     // A normal function to complete the auction 
 
-    function auctionComplete() public onlyOwner {
+    function auctionComplete() public onlyOwner completedAuction {
         state = auctionState.auctionCompleted;
     }
 
     // Function to end the auction and send ether to the winner of the aution
 
-    function endAuction () public onlyOwner {
-        
+    function endAuction () public onlyOwner stopAuction validBids{
+
+        address payable auctionWinner;
+        uint valueDeposited;
+
+        if (state == auctionState.auctionCancelled || 
+            state == auctionState.auctionCompleted) {
+                auctionWinner = payable(msg.sender);
+                valueDeposited = bindingBids[msg.sender];
+            } else {
+                if (msg.sender == auctionOwner) {
+                    auctionWinner != auctionOwner; 
+                    valueDeposited = highestBidAmount;
+                } else {
+                    if (msg.sender == highestBidderAddress) {
+                        auctionWinner == highestBidderAddress;
+                        valueDeposited = bindingBids[highestBidderAddress] - highestBidAmount;
+                    } else {
+                        auctionWinner = payable(msg.sender);
+                        valueDeposited = bindingBids[msg.sender];
+                    }
+                }
+            }
+
+            bindingBids[auctionWinner] = 0;
+            auctionWinner.transfer(valueDeposited);
+
 
     }
 
