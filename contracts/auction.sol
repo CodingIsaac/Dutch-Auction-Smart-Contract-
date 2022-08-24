@@ -36,6 +36,11 @@ contract smartAuction {
         _;
     }
 
+    modifier currenctAuctionState() {
+        require(state == auctionState.auctionCurrentlyRunning, "Auction has not Started");
+        _;
+    }
+
 
     constructor () {
         auctionOwner = payable (msg.sender);
@@ -44,31 +49,58 @@ contract smartAuction {
         ipfsHash = "";
     }
 
+    // more like the tossing of a dice, which ever side has the highest bid wins
+
+    function minBid(uint one, uint two) pure internal returns (uint) {
+        if (one >= two) {
+            return one;
+        } else {
+            return two;
+        }
+
+    }
+
     
 
-    function enterAuction() public payable notOwner validEntry{
+    function enterAuction() public payable notOwner validEntry currenctAuctionState{
       uint currentBindingBids =  bindingBids[msg.sender] + msg.value;
       require(currentBindingBids > highestBidAmount, "Highest Binding Bid is greater than your current Bid");
       bindingBids[msg.sender] = currentBindingBids;
 
+      if (currentBindingBids <= bindingBids[highestBidderAddress]) {
+          highestBidAmount = minBid(currentBindingBids + bidIncrements, bindingBids[highestBidderAddress]);
+
+      } else {
+          highestBidAmount = minBid(currentBindingBids, bindingBids[highestBidderAddress] + bidIncrements);
+          highestBidderAddress = payable(msg.sender);
+
+      }
+
     }
+
+    // An auction to get the balance of the auction
 
     function getAuctionBalance() public view returns (uint) {
         return address(this).balance;
     }
 
-    
+    // A function giving capacity to the owner to cancel the auction
 
     function cancelAuction () public onlyOwner {
         state = auctionState.auctionCancelled;
     }
 
+    // A normal function to complete the auction 
+
     function auctionComplete() public onlyOwner {
         state = auctionState.auctionCompleted;
     }
 
-    function endAuction() public onlyOwner {
+    // Function to end the auction and send ether to the winner of the aution
+
+    function endAuction () public onlyOwner {
         
+
     }
 
     
