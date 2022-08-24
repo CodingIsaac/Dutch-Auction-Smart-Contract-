@@ -12,4 +12,5 @@ package.json
 package-lock.json
 Hardhat.config.types
 tsconfig.json
+Hardhat.config.ts
 
